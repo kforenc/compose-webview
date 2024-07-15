@@ -1,5 +1,6 @@
 package com.kevinnzou.web
 
+import android.webkit.ValueCallback
 import android.webkit.WebView
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
@@ -39,6 +40,12 @@ public class WebViewNavigator(private val coroutineScope: CoroutineScope) {
             val mimeType: String? = null,
             val encoding: String? = "utf-8",
             val historyUrl: String? = null
+        ) : NavigationEvent
+
+        data class EvaluateJavascript(
+            val javascript: String,
+            val resultCallback: ValueCallback<String>?
+
         ) : NavigationEvent
 
         data class PostUrl(
@@ -81,6 +88,9 @@ public class WebViewNavigator(private val coroutineScope: CoroutineScope) {
                     event.mimeType,
                     event.encoding,
                     event.historyUrl
+                )
+                is NavigationEvent.EvaluateJavascript -> evaluateJavascript(
+                    event.javascript, event.resultCallback
                 )
 
                 is NavigationEvent.LoadUrl -> {
@@ -134,6 +144,20 @@ public class WebViewNavigator(private val coroutineScope: CoroutineScope) {
                     mimeType,
                     encoding,
                     historyUrl
+                )
+            )
+        }
+    }
+
+    public fun evaluateJavascript(
+        javascript: String,
+        resultCallback: ValueCallback<String>? = null
+    ) {
+        coroutineScope.launch {
+            navigationEvents.emit(
+                NavigationEvent.EvaluateJavascript(
+                    javascript,
+                    resultCallback
                 )
             )
         }
